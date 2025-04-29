@@ -41,6 +41,11 @@ public class E_IoC_DI {
     }
 
     // 2. 스프링 제어의 역전 프로그래밍 방식
+    @Component
+    // : 스프링 컨테이너가 해당 객체를 관리하도록 설정
+
+    // cf) 스프링 빈(Bean)
+    // : 스프링 컨테이너에 의해 관리되는 재사용 가능한 소프트웨어 컴포넌트
     class Book2 {
         private String title;
 
@@ -53,11 +58,8 @@ public class E_IoC_DI {
         }
     }
 
-    // 2. 스프링 제어의 역전 프로그래밍 방식
-    @Component
-    // : 스프링 컨테이너가 해당 객체를 관리하도록 설정
-    // cf) 스프링 빈(Bean)
-    // : 스프링 컨테이너에 의해 관리되는 재사용 가능한 소프트웨어 컴포넌트
+
+    @Component // 해당 클래스를 스프링 빈으로 등록!
     class BookStore2 {
         private Book2 book;
 

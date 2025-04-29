@@ -15,5 +15,5 @@ public class F_Constructor {
 
     // 3) persistence(퍼시스턴스) 계층
     // : repository(리포지토리)
-    //      - 모든 DB 괸련 로직을 처리 (DB에 접근하는 객체 사용 가능)
+    //      - 모든 DB 관련 로직을 처리 (DB에 접근하는 객체 사용 가능)
 }
