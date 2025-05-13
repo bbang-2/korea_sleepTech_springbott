@@ -5,6 +5,7 @@ import com.example.korea_sleepTech_springboot.dto.request.PostCreateRequestDto;
 import com.example.korea_sleepTech_springboot.dto.request.PostUpdateRequestDto;
 import com.example.korea_sleepTech_springboot.dto.response.PostDetailResponseDto;
 import com.example.korea_sleepTech_springboot.dto.response.PostListResponseDto;
+import com.example.korea_sleepTech_springboot.dto.response.PostWithCommentCountResponseDto;
 import com.example.korea_sleepTech_springboot.dto.response.ResponseDto;
 import com.example.korea_sleepTech_springboot.service.PostService;
 import jakarta.validation.Valid;
@@ -64,5 +65,52 @@ public class PostController {
     public ResponseEntity<ResponseDto<Void>> deletePost(@PathVariable Long id) {
         ResponseDto<Void> response = postService.deletePost(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ================================================================== //
+    // PostController의 메인 경로: "/api/v1/posts"
+
+    // 6) 특정 작성자의 모든 게시글 조회
+    @GetMapping("/author/{author}")
+    public ResponseEntity<ResponseDto<List<PostListResponseDto>>> getPostsByAuthor(@PathVariable String author) {
+        ResponseDto<List<PostListResponseDto>> response = postService.getPostsByAuthor(author);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    // 7) 특정 키워드로 제목 검색
+    @GetMapping("/search")
+    public ResponseEntity<ResponseDto<List<PostListResponseDto>>> searchPostByTitle(
+            @RequestParam String keyword
+    ){
+        ResponseDto<List<PostListResponseDto>> response = postService.searchPostByTitle(keyword);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    // 8) 댓글이 가장 많은 상위 5개의 게시글 조회
+    @GetMapping("/top-comments")
+    public ResponseEntity<ResponseDto<List<PostWithCommentCountResponseDto>>> getTop5PostByComments () {
+        ResponseDto<List<PostWithCommentCountResponseDto>> response = postService.getTop5PostByComments();
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    // 9) 특정 키워드를 포함하는 댓글이 달린 게시글 조회
+    //      >> "스프링"이라는 키워드를 포함한 댓글이 달린 모든 게시글을 조회
+    @GetMapping("/keyword-comment")
+    public ResponseEntity<ResponseDto<List<PostListResponseDto>>> searchPostByKeywordWithComment(
+            @RequestParam String keyword
+    ){
+        ResponseDto<List<PostListResponseDto>> response = postService.searchPostByKeywordWithComment(keyword);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    // 10) 특정 작성자의 게시글 중, 댓글 수가 일정 개수 이상인 게시글 조회
+    //      >> author 가 작성한 게시글 중에서 댓글이 3개 이상인 게시글을 조회
+    @GetMapping("/up-comment")
+    public ResponseEntity<ResponseDto<List<PostListResponseDto>>> searchPostByCommentCount (
+            @RequestParam String author,
+            @RequestParam int count
+    ) {
+        ResponseDto<List<PostListResponseDto>> response = postService.searchPostByCommentCount(author, count);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }

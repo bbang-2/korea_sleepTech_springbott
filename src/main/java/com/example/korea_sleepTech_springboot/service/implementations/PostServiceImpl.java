@@ -3,15 +3,13 @@ package com.example.korea_sleepTech_springboot.service.implementations;
 import com.example.korea_sleepTech_springboot.common.ResponseMessage;
 import com.example.korea_sleepTech_springboot.dto.request.PostCreateRequestDto;
 import com.example.korea_sleepTech_springboot.dto.request.PostUpdateRequestDto;
-import com.example.korea_sleepTech_springboot.dto.response.CommentResponseDto;
-import com.example.korea_sleepTech_springboot.dto.response.PostDetailResponseDto;
-import com.example.korea_sleepTech_springboot.dto.response.PostListResponseDto;
-import com.example.korea_sleepTech_springboot.dto.response.ResponseDto;
+import com.example.korea_sleepTech_springboot.dto.response.*;
 import com.example.korea_sleepTech_springboot.entity.D_Post;
 import com.example.korea_sleepTech_springboot.repository.PostRepository;
 import com.example.korea_sleepTech_springboot.service.PostService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -123,13 +121,124 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public ResponseDto<Void> deletePost(Long id) {
-        if (!postRepository.existsById(id)) {
-            // .existsById(PK값)
-            // : 존재하면 true, 존재하지 않으면 false 반환
-            throw new EntityNotFoundException(ResponseMessage.NOT_EXISTS_POST + id);
-        }
+//        if (!postRepository.existsById(id)) {
+//            // .existsById(PK값)
+//            // : 존재하면 true, 존재하지 않으면 false 반환
+//            throw new EntityNotFoundException(ResponseMessage.NOT_EXISTS_POST + id);
+//        }
+
+        D_Post post = postRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(ResponseMessage.NOT_EXISTS_POST + id));
+
+        // cf) 게시물 삭제 이전에 모든 댓글에 대해 관계 해제
+        // 인스턴스 메서드 참조
+        // 기본) 인스턴스명.메서드명()
+        //      forEach(post -> post.removeComment())
+        post.getComments().forEach(post::removeComment);
 
         postRepository.deleteById(id);
         return ResponseDto.setSuccess(ResponseMessage.SUCCESS, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResponseDto<List<PostListResponseDto>> getPostsByAuthor(String author) {
+        List<PostListResponseDto> responseDtos = null;
+
+        List<D_Post> posts = postRepository.findByAuthor(author);
+
+        responseDtos = posts.stream()
+                .map(post -> PostListResponseDto.builder()
+                        .id(post.getId())
+                        .title(post.getTitle())
+                        .content(post.getContent())
+                        .author(post.getAuthor())
+                        .build())
+                .collect(Collectors.toList());
+        return ResponseDto.setSuccess(ResponseMessage.SUCCESS, responseDtos);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResponseDto<List<PostListResponseDto>> searchPostByTitle(String keyword) {
+        List<PostListResponseDto> responseDtos = null;
+
+        List<D_Post> posts = postRepository.findByTitleIgnoreCaseContaining(keyword);
+
+        responseDtos = posts.stream()
+                .map(post -> PostListResponseDto.builder()
+                        .id(post.getId())
+                        .title(post.getTitle())
+                        .content(post.getContent())
+                        .author(post.getAuthor())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ResponseDto.setSuccess(ResponseMessage.SUCCESS, responseDtos);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResponseDto<List<PostWithCommentCountResponseDto>> getTop5PostByComments() {
+        List<PostWithCommentCountResponseDto> responseDtos = null;
+
+        List<Object[]> results = postRepository.findTop5ByOrderByCommentsSizeDesc();
+
+        responseDtos = results.stream()
+                .map(row -> PostWithCommentCountResponseDto.builder()
+                        // JPA 데이터 반환이 Object[] 타입
+                        // : 내부의 데이터는 Object로 명시 >> 각 타입으로 명시적 형 변환(강제 형 변환)
+                        .id(((Number) row[0]).longValue())
+                        .title((String) row[1])
+                        .content((String) row[2])
+                        .author((String) row[3])
+                        .commentCount(((Number) row[4]).intValue())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ResponseDto.setSuccess(ResponseMessage.SUCCESS, responseDtos);
+    }
+
+    // 9) 특정 키워드를 포함하는 댓글이 달린 게시글 조회
+    //      >> "스프링"이라는 키워드를 포함한 댓글이 달린 모든 게시글을 조회
+    @Override
+    @Transactional(readOnly = true)
+    public ResponseDto<List<PostListResponseDto>> searchPostByKeywordWithComment(String keyword) {
+        List<PostListResponseDto> responseDtos = null;
+
+        List<D_Post> posts = postRepository.searchPostByKeywordWithComment(keyword);
+
+        responseDtos = posts.stream()
+                .map(post -> PostListResponseDto.builder()
+                        .id(post.getId())
+                        .title(post.getTitle())
+                        .content(post.getContent())
+                        .author(post.getAuthor())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ResponseDto.setSuccess(ResponseMessage.SUCCESS, responseDtos);
+    }
+
+
+
+    // 10) 특정 작성자의 게시글 중, 댓글 수가 일정 개수 이상인 게시글 조회
+    //      >> author 가 작성한 게시글 중에서 댓글이 3개 이상인 게시글을 조회
+    @Override
+    public ResponseDto<List<PostListResponseDto>> searchPostByCommentCount(String author, int count) {
+        List<PostListResponseDto> responseDtos = null;
+
+        List<D_Post> posts = postRepository.searchPostByKeywordWithComment(author);
+
+        responseDtos = posts.stream()
+                .map(post -> PostListResponseDto.builder()
+                        .id(post.getId())
+                        .title(post.getTitle())
+                        .content(post.getContent())
+                        .author(post.getAuthor())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ResponseDto.setSuccess(ResponseMessage.SUCCESS, responseDtos);
     }
 }
