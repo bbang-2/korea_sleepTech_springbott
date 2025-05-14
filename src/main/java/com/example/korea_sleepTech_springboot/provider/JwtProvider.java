@@ -1,5 +1,9 @@
 package com.example.korea_sleepTech_springboot.provider;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtParser;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -7,6 +11,9 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /*
     === JwtProvider 클래스 ===
@@ -31,6 +38,10 @@ public class JwtProvider {
     private final Key key; // JWT 서명에 사용할 암호키 저장 변수
     private final int jwtExpirationMs;
 
+    public int getExpiration() {
+        return jwtExpirationMs;
+    }
+
     public JwtProvider(
             @Value("${jwt.secret}") String secret,
             @Value("${jwt.expiration}") int jwtExpirationMs // // JWT 토큰의 만료 시간을 저장
@@ -50,19 +61,90 @@ public class JwtProvider {
         @Param: 사용자 정보
         @Return: 생성된 JWT 토큰 문자열
      */
-    public String generateJwtToken(String username) {
-        return null;
+    public String generateJwtToken(String username, Set<String> roles) {
+        return Jwts.builder()
+                // 클레임에 사용자 ID를 저장(User 엔티티의 id가 아니라, 로그인 시 사용할 사용자 식별자)
+                .claim("username", username)
+                .claim("roles", roles)
+                // 현재 시간을 기준으로 토큰 발행 시간 설정
+                .setIssuedAt(new Date())
+                // 현재 시간에 만료 시간을 더해 토큰 만료 시간 설정
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+                // HMAC-SHA26 알고리즘으로 생성된 비밀키로 서명
+                .signWith(key, SignatureAlgorithm.ES256)
+                // JWT를 최종적으로 직렬화하여 문자열로 반환
+                .compact();
     }
 
-    public String removeBearer(String authorizationHeader) {
-        return null;
+        /*
+            == removeBearer ==
+            JWT 에서 Bearer 접두사 제거
+
+            @Param: 접두사가 포함된 JWT 문자열
+            @Return: "Bearer "이 제거된 JWT
+
+            cf) Bearer(소유자)
+                : 클라이언트에서 JWT 토큰 내에 토큰의 소유자 정보와 권한이 담겨있음을 명시
+         */
+    public String removeBearer(String bearerToken) {
+        if (bearerToken == null || !bearerToken.startsWith("Bearer ")){
+            throw new RuntimeException("Invalid JWT token format");
+        }
+
+        // substring(N): N부터 끝까지의 문자열을 리턴
+        // substring(A, B): A이상 B미만까지의 문자열을 리턴
+
+        return bearerToken.substring("Bearer ".length());
     }
+
+    /*
+        == isValidToken ==
+        : JWT 유효성 검증
+        - Bearer이 제거된 서명키 자체의 유효성을 검증
+
+        @Param: token - JWT 토큰(Bearer 없음)
+        @Return: 유효하면 true, 유효하지 않으면 false
+     */
 
     public boolean isValidToken(String token) {
-        return true;
+        try {
+            getClaims(token); // JWT 클레임을 가져오면서 유효성 검증
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    /*
+        == getClaims ==
+        : JWT 클레임 정보를 가져오기
+
+        @Param: token
+        @Return: 클레임 정보
+     */
+    public Claims getClaims(String token) {
+        JwtParser jwtParser = Jwts.parserBuilder()
+                .setSigningKey(key) // JWT 파서에 서명에 사용된 비밀키 설정
+                .build();
+
+        // JWT를 파싱하여 클레임 정보(body)를 반환
+        return jwtParser.parseClaimsJws(token).getBody();
     }
 
+    /*
+        == getUsernameFromJwt ==
+        : JWT 검증 + 사용자 ID 추출
+
+        @Param: JWT 토큰
+        @Return: 사용자 ID
+     */
+
     public String getUsernameFromJwt(String token) {
-        return null;
+        Claims claims = getClaims(token);
+        return claims.get("username", String.class); // 클레임에서 username 값을 문자열 형태로 반환
+    }
+
+    public Set<String> getRolesFromJwt(String token) {
+        Claims claims = getClaims(token);
+        return new HashSet<>((List<String>) claims.get("roles"));
     }
 }
