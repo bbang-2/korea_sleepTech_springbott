@@ -41,9 +41,20 @@ CREATE TABLE products (
     updated_at timestamp on update current_timestamp
 );
 
-CREATE TABLE post ();
+CREATE TABLE post (
+	id bigint auto_increment primary key,
+    title varchar(255) not null,
+    content varchar(255) not null,
+    author varchar(255) not null
+);
 
-CREATE TABLE comment ();
+CREATE TABLE comment (
+	id bigint auto_increment primary key,
+    post_id bigint,
+    content varchar(255) not null,
+    commentor varchar(255) not null,
+    foreign key (post_id) references post(id) on delete cascade
+);
 
 CREATE TABLE users(
 	id bigint auto_increment primary key,

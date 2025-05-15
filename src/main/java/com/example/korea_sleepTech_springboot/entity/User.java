@@ -31,7 +31,7 @@ public class User implements UserDetails {
     @Column(name = "id", updatable = false) // DB 컬럼명 설정, updatable = false로 수정 불가 선언
     private Long id;
 
-    @Column(name = "eamil", nullable = false, unique = true)
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
     @Column(name = "password", nullable = false)

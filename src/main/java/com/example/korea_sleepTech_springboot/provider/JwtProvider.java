@@ -44,7 +44,7 @@ public class JwtProvider {
 
     public JwtProvider(
             @Value("${jwt.secret}") String secret,
-            @Value("${jwt.expiration}") int jwtExpirationMs // // JWT 토큰의 만료 시간을 저장
+            @Value("${jwt.expiration}") int jwtExpirationMs // JWT 토큰의 만료 시간을 저장
     ) {
         // 생성자: JWTProvider 객체 생성 시 비밀키와 만료시간을 초기화
 
@@ -52,6 +52,7 @@ public class JwtProvider {
         this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
         this.jwtExpirationMs = jwtExpirationMs;
     }
+
 
     /*
         generateJwtToken
@@ -63,15 +64,15 @@ public class JwtProvider {
      */
     public String generateJwtToken(String username, Set<String> roles) {
         return Jwts.builder()
-                // 클레임에 사용자 ID를 저장(User 엔티티의 id가 아니라, 로그인 시 사용할 사용자 식별자)
+                // 클레임에 사용자 ID를 저장 (User 엔티티의 id가 아니라, 로그인 시 사용할 사용자 식별자)
                 .claim("username", username)
                 .claim("roles", roles)
                 // 현재 시간을 기준으로 토큰 발행 시간 설정
                 .setIssuedAt(new Date())
                 // 현재 시간에 만료 시간을 더해 토큰 만료 시간 설정
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-                // HMAC-SHA26 알고리즘으로 생성된 비밀키로 서명
-                .signWith(key, SignatureAlgorithm.ES256)
+                // HMAC-SHA256 알고리즘으로 생성된 비밀키로 서명
+                .signWith(key, SignatureAlgorithm.HS256)
                 // JWT를 최종적으로 직렬화하여 문자열로 반환
                 .compact();
     }
@@ -86,16 +87,15 @@ public class JwtProvider {
             cf) Bearer(소유자)
                 : 클라이언트에서 JWT 토큰 내에 토큰의 소유자 정보와 권한이 담겨있음을 명시
          */
-    public String removeBearer(String bearerToken) {
-        if (bearerToken == null || !bearerToken.startsWith("Bearer ")){
-            throw new RuntimeException("Invalid JWT token format");
+        public String removeBearer(String bearerToken) {
+            if (bearerToken == null || !bearerToken.startsWith("Bearer ")) {
+                throw new RuntimeException("Invalid JWT token format");
+            }
+
+            // substring(N): N부터 끝까지의 문자열을 리턴
+            // substring(A, B): A이상 B 미만까지의 문자열을 리턴
+            return bearerToken.substring("Bearer ".length());
         }
-
-        // substring(N): N부터 끝까지의 문자열을 리턴
-        // substring(A, B): A이상 B미만까지의 문자열을 리턴
-
-        return bearerToken.substring("Bearer ".length());
-    }
 
     /*
         == isValidToken ==
