@@ -11,33 +11,33 @@ import java.util.Properties;
 // Spring 애플리케이션 구성 정보를 제공하는 설정 클래스
 @Configuration
 public class MailConfig { // Mail 관련 설정
+
     @Value("${spring.mail.host}")
     private String host; // 이메일 서버의 호스트 주소
-
     @Value("${spring.mail.port}")
-    private String port; // 이메일 서버가 사용하는 포트 번호 (587)
+    private int port; // 이메일 서버가 사용하는 포트 번호 (587)
 
-    // 인증정보
+    // 인증 정보
     @Value("${spring.mail.username}")
     private String username;
     @Value("${spring.mail.password}")
     private String password;
 
     @Bean
-    public JavaMailSender javaMailSender(){
+    public JavaMailSender javaMailSender() {
         // JavaMailSender의 기본 구현체 생성
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
 
         mailSender.setHost(host);
-        mailSender.setHost(port);
-        mailSender.setHost(username);
-        mailSender.setHost(password);
+        mailSender.setPort(port);
+        mailSender.setUsername(username);
+        mailSender.setPassword(password);
 
         // 이메일 전송 시 사용할 추가 속성 설정을 위한 객체 생성
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.transport.protocol", "smtp");
-        props.put("mail.smtp.auth", "ture");
-        props.put("mail.smtp.starttls.enable", "ture");
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.starttls.enable", "true");
         props.put("mail.debug", "true");
 
         return mailSender;

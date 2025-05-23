@@ -95,3 +95,54 @@ create table if not exists user_roles (
 
 select * from roles;
 select * from user_roles;
+
+-- log(기록) 테이블 --
+# 권한 변경 시 기록(로그) 테이블에 자동 저장
+create table if not exists role_change_logs (
+	id bigint auto_increment primary key,
+    user_id bigint not null, -- 권한이 변경된 사용자 ID(PK)
+    email varchar(255) not null, -- 사용자 이메일
+    prev_roles text,
+    new_roles text,
+    changed_by varchar(255) not null,-- 변경을 수행한 관리자 이메일
+    change_type varchar(255) not null, -- 변경 유형(ADD, ROMOVE, UPDATE 등)
+    change_reason varchar(255), -- 변경 사유 (필요 시 사용)
+    changed_at timestamp default current_timestamp,
+    foreign key (user_id) references users(id) on delete cascade
+);
+
+-- -------------------------------------------------
+# 파일 시스템
+create table if not exists `posts` (
+	id bigint auto_increment primary key,
+    title varchar(255) not null,
+    content text not null,
+    created_at datetime not null default current_timestamp,
+    updated_at datetime not null default current_timestamp on update current_timestamp
+);
+
+select * from posts;
+
+create table if not exists `communities` (
+	id bigint auto_increment primary key,
+    title varchar(255) not null,
+    content text not null,
+    created_at datetime not null default current_timestamp,
+    updated_at datetime not null default current_timestamp on update current_timestamp
+);
+
+create table if not exists `upload_files` (
+	id bigint auto_increment primary key,
+    original_name varchar(255) not null, -- 사용자가 업로드한 원래 이름
+    file_name varchar(255) not null, -- 서버에 저장된 이름
+    file_path varchar(500) not null, -- 전체 경로 또는 상대 경로
+    file_type varchar(100), -- MIME 타입 (image/png)
+    file_size bigint not null, -- 파일 크기(bytes
+    
+    target_id bigint not null,
+    target_type enum('POST', 'COMMUNITY') not null,
+    
+    index idx_target (target_id, target_type)
+);
+
+select * from upload_files;
