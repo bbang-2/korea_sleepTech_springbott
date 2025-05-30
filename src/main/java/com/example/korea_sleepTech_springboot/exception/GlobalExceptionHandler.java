@@ -23,12 +23,19 @@ import java.nio.file.AccessDeniedException;
  */
 public class GlobalExceptionHandler {
     // 400 - 잘못된 요청 (Bad Request)
-    // : 잘못된 인자 전달(IllegalArgumentException) 되거나 DTO 검증 실패 시 (MethodArgumentNotValidException)
+    // : 잘못된 인자가 전달(IllegalArgumentException)되거나 DTO 검증 실패 시(MethodArgumentNotValidException)
     // cf) @Valid 애너테이션으로 오류 발생 시 MethodArgumentNotValidException
-    @ExceptionHandler({IllegalArgumentException.class, MethodArgumentNotValidException.class, IllegalStateException.class})
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
     public ResponseEntity<ResponseDto<?>> handleBadRequest(Exception e) {
         e.printStackTrace();
         ResponseDto<?> response = ResponseDto.setFailed("Bad Request: " + e.getMessage());
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ResponseDto<?>> handleValidationException(Exception e) {
+        e.printStackTrace();
+        ResponseDto<?> response = ResponseDto.setFailed("Validation Failed: " + e.getMessage());
         return ResponseEntity.badRequest().body(response);
     }
 
@@ -40,7 +47,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
-    // 404 - (요청)엔티티룰 찾을 수 없음
+    // 404 - (요청)엔티티를 찾을 수 없음
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ResponseDto<?>> handleNotFoundException(EntityNotFoundException e) {
         e.printStackTrace();
@@ -48,19 +55,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
-    // 409 - 데이터 충돌 (무결성 위반)
+    // 409 - 데이터 충돌 (무결성 위반): DB 제약 조건 위반
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ResponseDto<?>> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
         e.printStackTrace();
-        ResponseDto<?> response = ResponseDto.setFailed("Conflict: " + e.getMessage());
+        ResponseDto<?> response = ResponseDto.setFailed("Conflict : " + e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
-    // 500 - 서버 내부
+    // 500 - 서버 내부 오류
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ResponseDto<?>> handleException(Exception e) {
         e.printStackTrace();
-        ResponseDto<?> response = ResponseDto.setFailed("Internal Server Error: " + e.getMessage());
+        ResponseDto<?> response = ResponseDto.setFailed("Internal Server Error : " + e.getMessage());
         return ResponseEntity.internalServerError().body(response);
     }
 }
